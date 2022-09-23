@@ -14,7 +14,8 @@ type Selection struct {
 }
 
 type TranslatedText struct {
-	text string
+	srcText string
+	destText string
 	priority int64
 	index int64
 }
@@ -58,7 +59,7 @@ func compare(a Selection, b Selection) int {
 }
 
 func translate(sel Selection, nextIndex *int64) TranslatedText {
-	translation := TranslatedText{sel.text, 0, *nextIndex}
+	translation := TranslatedText{sel.text, sel.text, 0, *nextIndex}
 	*nextIndex += 1
 	return translation
 }
@@ -87,7 +88,7 @@ func pop(pq *PQ) TranslatedText {
  * 打印翻译后的文本
  */
 func printText(translatedText TranslatedText) {
-	fmt.Println(fmt.Sprint(translatedText.index) + ">>> " + translatedText.text)
+	fmt.Println(fmt.Sprint(translatedText.index) + ">>> " + translatedText.destText)
 }
 
 func main() {
@@ -103,14 +104,10 @@ func main() {
 		var diff int = compare(sel, preSel)
 		preSel = sel
 		if diff != 0 {
-			wg.Add(1)
-			go func() {
-				var translatedText TranslatedText = translate(sel, &tid)
-				push(&q, translatedText)
-				var top TranslatedText = pop(&q)
-				printText(top)
-				wg.Done()
-			}()
+			var translatedText TranslatedText = translate(sel, &tid)
+			push(&q, translatedText)
+			var top TranslatedText = pop(&q)
+			printText(top)
 		}
 		time.Sleep(time.Duration( dt * float64(time.Second) ))
 	}
