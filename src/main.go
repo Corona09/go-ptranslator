@@ -2,10 +2,13 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"net/http"
+	"os/exec"
 	"sync"
 	"time"
-	"os/exec"
+	"io"
 )
 
 type Selection struct {
@@ -84,11 +87,44 @@ func pop(pq *PQ) TranslatedText {
 	return selectedText
 }
 
+func httpGet(url string) string {
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	var buffer [512]byte
+	result := bytes.NewBuffer(nil)
+	for {
+		n, err := resp.Body.Read(buffer[0:])
+		result.Write(buffer[0:n])
+		if err != nil && err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+	}
+	return result.String()
+}
+
+func google_translate_longstring(srcLang string, targetLang string, text string) string {
+	url := fmt.Sprintf(
+		"https://translate.googleapis.com/translate_a/single?client=gtx&sl=%s&tl=%s&dt=t&q=%s",
+		srcLang,
+		targetLang,
+		text)
+	result := httpGet(url)
+	return result
+}
+
 /**
  * 打印翻译后的文本
  */
 func printText(translatedText TranslatedText) {
-	fmt.Println(fmt.Sprint(translatedText.index) + ">>> " + translatedText.destText)
+	fmt.Println("原文: " + translatedText.srcText)
+	translatedText.destText = google_translate_longstring("en", "zh-CN", translatedText.srcText)
+	fmt.Println(fmt.Sprint(translatedText.index) + " >>> " + translatedText.destText)
 }
 
 func main() {
