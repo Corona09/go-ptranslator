@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-
 	"github.com/tidwall/gjson"
 )
 
@@ -94,6 +93,9 @@ func compare(a Selection, b Selection) int {
 func translate(sel Selection, nextIndex *int64) TranslatedText {
 	translation := TranslatedText{sel.text, sel.text, 0, *nextIndex}
 	*nextIndex += 1
+
+	translation.destText = google_translate_shortword("en", "zh-CN", translation.srcText)
+
 	return translation
 }
 
@@ -167,8 +169,11 @@ func google_translate_shortword(srcLang string, targetLang string, text string) 
 		targetLang,
 		text,
 	)
-	result := httpGet(u)
-	return result
+	// {"sentences":[{"trans":"这","orig":"The","backend":10},{"translit":"Zhè"}],"src":"en","alternative_translations":[{"src_phrase":"The","alternative":[{"word_postproc":"这","score":1000,"has_preceding_space":true,"attach_to_next_token":false,"backends":[10]},{"word_postproc":"该","score":0,"has_preceding_space":true,"attach_to_next_token":false,"backends":[3],"backend_infos":[{"backend":3}]},{"word_postproc":"那个","score":0,"has_preceding_space":true,"attach_to_next_token":false,"backends":[8]}],"srcunicodeoffsets":[{"begin":0,"end":3}],"raw_src_segment":"The","start_pos":0,"end_pos":0}],"confidence":1.0,"spell":{},"ld_result":{"srclangs":["en"],"srclangs_confidences":[1.0],"extended_srclangs":["en"]}}
+	resp := httpGet(u)
+	sentences := gjson.Parse(resp).Get("sentences")
+	trans := sentences.Get("0").Get("trans").String()
+	return trans
 }
 
 /**
@@ -186,9 +191,7 @@ func google_translate_longstring(srcLang string, targetLang string, text string)
 		text)
 	// [[["翻译","translate",null,null,10]],null,"en",null,null,null,null,[]]
 	resp := httpGet(u)
-	i := gjson.Parse(resp).Get("0").String()
-	j := gjson.Parse(i).Get("0").String()
-	result := gjson.Parse(j).Get("0").String()
+	result := gjson.Parse(resp).Get("0").Get("0").Get("0").String()
 	return result
 }
 
@@ -197,7 +200,7 @@ func google_translate_longstring(srcLang string, targetLang string, text string)
  */
 func printText(translatedText TranslatedText) {
 	fmt.Println("原文: " + translatedText.srcText)
-	translatedText.destText = google_translate_longstring("en", "zh-CN", translatedText.srcText)
+	// translatedText.destText = google_translate_longstring("en", "zh-CN", translatedText.srcText)
 	fmt.Println(fmt.Sprint(translatedText.index) + " >>> " + translatedText.destText)
 }
 
