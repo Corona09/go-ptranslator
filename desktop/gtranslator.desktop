@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=GTranslator
+Comment=Translate selected text in terminal
+Icon=gtranslator
+Terminal=false
+Exec=st -e gtranslator
+Categories=ConsoleOnly;Utility;
+Keywords=Translate
+
