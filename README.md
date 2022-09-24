@@ -16,3 +16,7 @@
 # fedora
 sudo dnf install xsel
 ```
+
+todo:
+
+翻译单个单词时使用有道翻译
