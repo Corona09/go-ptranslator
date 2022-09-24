@@ -12,6 +12,10 @@ import (
 	"io"
 )
 
+func ClearSel() {
+	Command("xsel -c")
+}
+
 /**
  * 获取选择的内容并返回
  * @param currentIndex 下一个被选择文本的 id

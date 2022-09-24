@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"github.com/fatih/color"
 	"github.com/tidwall/gjson"
 )
 
@@ -88,21 +89,37 @@ func google_translate_longstring(srcLang string, targetLang string, text string)
 func printText(translatedText TranslatedText) {
 	fmt.Println("原文: " + translatedText.srcText)
 	fmt.Println(fmt.Sprint(translatedText.index) + " >>> " + translatedText.destText)
+	fmt.Println()
 }
 
 func main() {
 	var sid int64 = 0
-	var tid int64 = 0
+	var tid int64 = 1
 	var dt float64 = 0.3 // 秒
 	var preSel Selection = Selection{ "", 0 }
 	var q PQ
 
+	const MAX_TEXT_LENGTH int = 40
+	
+	var srcLang string = "en"
+	var destLang string = "zh-CN"
+
+	ClearSel()
+
 	for {
 		var sel Selection = GetSel(&sid)
 		var diff int = Compare(sel, preSel)
+		
+		if len(sel.text) > MAX_TEXT_LENGTH {
+			// 文本过长, 输出错误提示
+			fmt.Printf("Its too long\n\n")
+			ClearSel()
+			continue
+		}
+
 		preSel = sel
 		if diff != 0 {
-			var translatedText TranslatedText = translate(sel, "en", "zh-CN", &tid)
+			var translatedText TranslatedText = translate(sel, srcLang, destLang, &tid)
 			push(&q, translatedText)
 			var top TranslatedText = pop(&q)
 			printText(top)
