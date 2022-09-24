@@ -85,13 +85,19 @@ func google_translate_longstring(srcLang string, targetLang string, text string)
 /**
  * 打印翻译后的文本
  */
-func printText(translatedText TranslatedText) {
-	color.Cyan("* * * <%02d> %s * * *", translatedText.index, time.Now().String()[:19])
+func printText(tr TranslatedText) {
+	// color.Cyan("* * * <%02d> %s * * *", tr.index, time.Now().String()[:19])
+
+	cyan := color.New(color.FgCyan).Add(color.Bold)
+	white := color.New(color.FgWhite).Add(color.Bold)
+	cyan.Printf("* * * "); white.Printf("<%02d> %s", tr.index, time.Now().String()[:19]); cyan.Printf(" * * *\n")
+	
 	bold := color.New(color.Bold)
-	greenBold := color.New(color.FgGreen).Add(color.Bold)
-	blueBold := color.New(color.FgBlue).Add(color.Bold)
-	bold.Printf("- Original Text"); greenBold.Printf(" >>> "); bold.Println(translatedText.srcText )
-	bold.Printf("- Translation  ");  blueBold.Printf(" >>> "); bold.Println(translatedText.destText)
+	greenBold := color.New(color.FgHiGreen).Add(color.Bold)
+
+	prompt := color.New(color.FgHiYellow).Add(color.Bold)
+	prompt.Printf(" [原文]"); greenBold.Printf(" >>> "); bold.Println(tr.srcText + " (" + fmt.Sprint(len(tr.srcText)) + ")")
+	prompt.Printf(" [翻译]"); greenBold.Printf(" >>> "); white.Println(tr.destText)
 	fmt.Println()
 }
 

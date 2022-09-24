@@ -52,6 +52,7 @@ func HandleSelected(sel []byte) string {
 		texts[i] = strings.Trim(texts[i], "\n")
 	}
 	text = strings.Join(texts, " ")
+	text = strings.Replace(text, "- ", "-", -1)
 	return text
 }
 
