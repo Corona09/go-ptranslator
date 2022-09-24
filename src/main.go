@@ -111,7 +111,7 @@ func main() {
 	var preSel Selection = Selection{ "", 0 }
 	var q PQ
 
-	const MAX_TEXT_LENGTH int = 40
+	const MAX_TEXT_LENGTH int = 255
 	
 	var srcLang string = "en"
 	var destLang string = "zh-CN"
