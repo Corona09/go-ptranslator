@@ -4,11 +4,11 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"os/exec"
-	"sync"
 	"time"
-	"io"
+	"net/url"
 )
 
 type Selection struct {
@@ -25,19 +25,33 @@ type TranslatedText struct {
 
 type PQ []TranslatedText
 
+/**
+ * 执行 bash 命令
+ * @param cmd 要执行的命令
+ * @return (命令的执行输出, 报错)
+ */
 func Command(cmd string) ([]byte, error) {
 	c := exec.Command("bash", "-c", cmd)
 	output, err := c.CombinedOutput()
 	return output, err
 }
 
+/**
+ * 处理选择的文本
+ * @param sel 被选择的文本
+ * @return 处理后的文本
+ */
 func handleSelected(sel []byte) string {
 	text := string(sel)
 	return text
 }
 
-// 获取选择的内容并返回
-func getSel(currentIndex *int64) Selection {
+/**
+ * 获取选择的内容并返回
+ * @param currentIndex 下一个被选择文本的 id
+ * @param 被选择的文本
+ */
+func getSel(nextIndex *int64) Selection {
 	sel, err := Command("xsel")
 	if err != nil {
 		fmt.Println(err.Error())
@@ -46,11 +60,15 @@ func getSel(currentIndex *int64) Selection {
 
 	selectedText := handleSelected(sel)
 
-	selection := Selection{ selectedText, *currentIndex }
-	*currentIndex += 1
+	selection := Selection{ selectedText, *nextIndex }
+	*nextIndex += 1
 	return selection
 }
 
+/**
+ * 比较两个选择
+ * @return 相同返回 0, 不同返回非 0
+ */
 func compare(a Selection, b Selection) int {
 	if a.text < b.text {
 		return -1
@@ -61,16 +79,28 @@ func compare(a Selection, b Selection) int {
 	}
 }
 
+/**
+ * 翻译文本
+ * @param sel 待翻译的文本
+ * @param nextIndex 下一个翻译后的文本的 id
+ * @return 翻译之后的文本
+ */
 func translate(sel Selection, nextIndex *int64) TranslatedText {
 	translation := TranslatedText{sel.text, sel.text, 0, *nextIndex}
 	*nextIndex += 1
 	return translation
 }
 
+/**
+ * 将翻译后的文本压入队列中
+ */
 func push(pq *PQ, translatedText TranslatedText) {
 	*pq = append(*pq, translatedText)
 }
 
+/**
+ * 取出队列中 index 最小的文本并返回
+ */
 func pop(pq *PQ) TranslatedText {
 	var selectedText TranslatedText
 	var selectedIndex int = 0
@@ -87,9 +117,17 @@ func pop(pq *PQ) TranslatedText {
 	return selectedText
 }
 
-func httpGet(url string) string {
+/**
+ * 发送 http get 请求
+ * @param req 请求路径
+ * @return 返回的而结果
+ */
+func httpGet(req string) string {
 	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(url)
+	u, _ := url.Parse(req)
+	q := u.Query()
+	u.RawQuery = q.Encode()
+	resp, err := client.Get(u.String())
 	if err != nil {
 		panic(err)
 	}
@@ -108,13 +146,38 @@ func httpGet(url string) string {
 	return result.String()
 }
 
+/**
+ * 使用谷歌翻译短的单词
+ * @param srcLang 源语言 (en)
+ * @param targetLang 目标语言 (zh-CN)
+ * @param text 待翻译文本
+ * @return 翻译后的文本
+ */
+func google_translate_shortword(srcLang string, targetLang string, text string) string {
+	u := fmt.Sprintf(
+		"https://translate.googleapis.com/translate_a/single?client=gtx&sl=%s&tl=%s&dj=1&dt=t&dt=bd&dt=qc&dt=rm&dt=ex&dt=at&dt=ss&dt=rw&dt=ld&q=%s&button&tk=233819.233819",
+		srcLang,
+		targetLang,
+		text,
+	)
+	result := httpGet(u)
+	return result
+}
+
+/**
+ * 使用谷歌翻译长文本
+ * @param srcLang 源语言 (en)
+ * @param targetLang 目标语言 (zh-CN)
+ * @param text 待翻译文本
+ * @return 翻译后的文本
+ */
 func google_translate_longstring(srcLang string, targetLang string, text string) string {
-	url := fmt.Sprintf(
+	u := fmt.Sprintf(
 		"https://translate.googleapis.com/translate_a/single?client=gtx&sl=%s&tl=%s&dt=t&q=%s",
 		srcLang,
 		targetLang,
 		text)
-	result := httpGet(url)
+	result := httpGet(u)
 	return result
 }
 
@@ -128,7 +191,6 @@ func printText(translatedText TranslatedText) {
 }
 
 func main() {
-	var wg sync.WaitGroup
 	var sid int64 = 0
 	var tid int64 = 0
 	var dt float64 = 0.3 // 秒
@@ -147,7 +209,5 @@ func main() {
 		}
 		time.Sleep(time.Duration( dt * float64(time.Second) ))
 	}
-
-	wg.Wait()
 }
 
