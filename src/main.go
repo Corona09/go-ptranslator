@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os/exec"
-	"time"
 	"net/url"
+	"os/exec"
+	"strings"
+	"time"
+
+	"github.com/tidwall/gjson"
 )
 
 type Selection struct {
@@ -43,6 +46,9 @@ func Command(cmd string) ([]byte, error) {
  */
 func handleSelected(sel []byte) string {
 	text := string(sel)
+	text = strings.Trim(text, " ")
+	text = strings.Trim(text, "\t")
+	text = strings.Trim(text, "\n")
 	return text
 }
 
@@ -124,6 +130,7 @@ func pop(pq *PQ) TranslatedText {
  */
 func httpGet(req string) string {
 	client := &http.Client{Timeout: 5 * time.Second}
+	// 需要对 req 路径进行转义
 	u, _ := url.Parse(req)
 	q := u.Query()
 	u.RawQuery = q.Encode()
@@ -177,7 +184,11 @@ func google_translate_longstring(srcLang string, targetLang string, text string)
 		srcLang,
 		targetLang,
 		text)
-	result := httpGet(u)
+	// [[["翻译","translate",null,null,10]],null,"en",null,null,null,null,[]]
+	resp := httpGet(u)
+	i := gjson.Parse(resp).Get("0").String()
+	j := gjson.Parse(i).Get("0").String()
+	result := gjson.Parse(j).Get("0").String()
 	return result
 }
 
