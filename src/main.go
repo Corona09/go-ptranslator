@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
 	"github.com/tidwall/gjson"
 )
 
@@ -47,6 +48,7 @@ func handleSelected(sel []byte) string {
 	text := string(sel)
 	text = strings.Trim(text, " ")
 	text = strings.Trim(text, "\t")
+	text = strings.Replace(text, "\n", " ", -1)
 	text = strings.Trim(text, "\n")
 	return text
 }
@@ -87,16 +89,23 @@ func compare(a Selection, b Selection) int {
 /**
  * 翻译文本
  * @param sel 待翻译的文本
+ * @param srcLang 源语言
+ * @param destLang 目标语言
  * @param nextIndex 下一个翻译后的文本的 id
  * @return 翻译之后的文本
  */
-func translate(sel Selection, nextIndex *int64) TranslatedText {
-	translation := TranslatedText{sel.text, sel.text, 0, *nextIndex}
+func translate(sel Selection, srcLang string, destLang string, nextIndex *int64) TranslatedText {
+	tr := TranslatedText{sel.text, sel.text, 0, *nextIndex}
 	*nextIndex += 1
 
-	translation.destText = google_translate_shortword("en", "zh-CN", translation.srcText)
+	n := strings.Count(tr.srcText, " ")
+	if n == 0 && len(tr.srcText) < 30 {
+		tr.destText = google_translate_shortword(srcLang, destLang, tr.srcText)
+	} else {
+		tr.destText = google_translate_longstring(srcLang, destLang, tr.srcText)
+	}
 
-	return translation
+	return tr
 }
 
 /**
@@ -216,7 +225,7 @@ func main() {
 		var diff int = compare(sel, preSel)
 		preSel = sel
 		if diff != 0 {
-			var translatedText TranslatedText = translate(sel, &tid)
+			var translatedText TranslatedText = translate(sel, "en", "zh-CN", &tid)
 			push(&q, translatedText)
 			var top TranslatedText = pop(&q)
 			printText(top)
