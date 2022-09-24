@@ -40,8 +40,14 @@ func HandleSelected(sel []byte) string {
 	text := string(sel)
 	text = strings.Trim(text, " ")
 	text = strings.Trim(text, "\t")
-	text = strings.Replace(text, "\n", " ", -1)
 	text = strings.Trim(text, "\n")
+	texts := strings.Split(text, "\n")
+	for i:= 0; i < len(texts); i++ {
+		texts[i] = strings.Trim(texts[i], " ")
+		texts[i] = strings.Trim(texts[i], "\t")
+		texts[i] = strings.Trim(texts[i], "\n")
+	}
+	text = strings.Join(texts, " ")
 	return text
 }
 
@@ -109,6 +115,7 @@ func HttpGet(req string) string {
 	u, _ := url.Parse(req)
 	q := u.Query()
 	u.RawQuery = q.Encode()
+
 	resp, err := client.Get(u.String())
 	if err != nil {
 		panic(err)

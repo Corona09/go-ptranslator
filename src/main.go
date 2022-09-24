@@ -87,7 +87,6 @@ func google_translate_longstring(srcLang string, targetLang string, text string)
  */
 func printText(translatedText TranslatedText) {
 	fmt.Println("原文: " + translatedText.srcText)
-	// translatedText.destText = google_translate_longstring("en", "zh-CN", translatedText.srcText)
 	fmt.Println(fmt.Sprint(translatedText.index) + " >>> " + translatedText.destText)
 }
 
