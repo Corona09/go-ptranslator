@@ -1,4 +1,3 @@
-// Package main provides ...
 package main
 
 import (
@@ -87,8 +86,21 @@ func google_translate_longstring(srcLang string, targetLang string, text string)
  * 打印翻译后的文本
  */
 func printText(translatedText TranslatedText) {
-	fmt.Println("原文: " + translatedText.srcText)
-	fmt.Println(fmt.Sprint(translatedText.index) + " >>> " + translatedText.destText)
+	color.Cyan("* * * <%02d> %s * * *", translatedText.index, time.Now().String()[:19])
+	bold := color.New(color.Bold)
+	greenBold := color.New(color.FgGreen).Add(color.Bold)
+	blueBold := color.New(color.FgBlue).Add(color.Bold)
+	bold.Printf("- Original Text"); greenBold.Printf(" >>> "); bold.Println(translatedText.srcText )
+	bold.Printf("- Translation  ");  blueBold.Printf(" >>> "); bold.Println(translatedText.destText)
+	fmt.Println()
+}
+
+func welcome() {
+	bdu := color.New(color.Bold)
+	bdu.Printf("**************************************\n")
+	bdu.Printf("*     Welcome to use GTranslator!    *\n")
+	bdu.Printf("*   Copyright(C)Corona 2022, GPL v3  *\n")
+	bdu.Printf("**************************************\n")
 	fmt.Println()
 }
 
@@ -105,6 +117,8 @@ func main() {
 	var destLang string = "zh-CN"
 
 	ClearSel()
+
+	welcome()
 
 	for {
 		var sel Selection = GetSel(&sid)
