@@ -199,44 +199,82 @@ func getWebPhrase(doc goquery.Document) map[string][]string {
 func printYoudaoTrans(tr TranslatedText) {
 	prompt := color.New(color.FgHiYellow).Add(color.Bold)
 	yellow := color.New(color.FgHiYellow).Add(color.Bold)
-	white := color.New(color.FgWhite).Add(color.Bold)
+	white := color.New(color.FgWhite)
 	green := color.New(color.FgHiGreen).Add(color.Bold)
-	cyan := color.New(color.FgHiCyan).Add(color.Bold)
+	cyan := color.New(color.FgHiCyan).Add(color.Bold).Add(color.Italic)
 
 	// 打印音标
 	prompt.Printf(" [翻译]"); green.Printf(" >>> ");
 	white.Printf("%s ", tr.srcText)
-	for _, p := range tr.pronounce {
-		yellow.Printf("%s ", p)
+	
+	var foundTranslation bool = false
+	if tr.pronounce != nil && len(tr.pronounce) > 0 {
+		foundTranslation = true
+		for _, p := range tr.pronounce {
+			yellow.Printf("%s ", p)
+		}
 	}
+
 	fmt.Println()
 
 	// 打印中文释义
-	for _, exp := range tr.explanationCN {
-		exps := strings.Split(exp, "；")
-		indient := 0
-		for k, subexp := range exps {
-			r := regexp.MustCompile("[(a-z)*]\\.(.*)")
-			if k == 0 {
-				if r.MatchString(subexp) {
-					indient = strings.Index(subexp, ".") + 1
-					x := strings.SplitN(subexp, ".", 2)
-					cyan.Printf(" " + x[0])
-					white.Println(" * " + strings.TrimSpace(x[1]))
+	if tr.explanationCN != nil && len(tr.explanationCN) > 0 {
+		foundTranslation = true
+		for _, exp := range tr.explanationCN {
+			exps := strings.Split(exp, "；")
+			indient := 0
+			for k, subexp := range exps {
+				r := regexp.MustCompile("[(a-z)*]\\.(.*)")
+				if k == 0 {
+					if r.MatchString(subexp) {
+						indient = strings.Index(subexp, ".") + 1
+						x := strings.SplitN(subexp, ".", 2)
+						cyan.Printf(" " + x[0])
+						white.Println(" * " + strings.TrimSpace(x[1]))
+					} else {
+						cyan.Printf(" Phares ")
+						white.Println(subexp)
+					}
 				} else {
-					cyan.Printf("Phares. ")
-					white.Println(" " + subexp)
-				}
-			} else {
-				white.Printf(" ")
-				for i := 0; i < indient; i++ {
 					white.Printf(" ")
+					for i := 0; i < indient; i++ {
+						white.Printf(" ")
+					}
+					white.Println("* " + subexp)
 				}
-				white.Println("* " + subexp)
+			}
+			fmt.Println()
+		}
+	}
+
+	// 打印 web 释义
+	if tr.explanationWeb != nil && len(tr.explanationWeb) > 0 {
+		foundTranslation = true
+		cyan.Printf(" Web ")
+		for i, exp := range tr.explanationWeb {
+			if i == 0 {
+				white.Println("* " + exp)
+			} else {
+				white.Println("     * " + exp)
 			}
 		}
-		fmt.Println()
+		cyan.Println()
 	}
-	// 打印 web 释义
 	// 打印 web 短语
+	if tr.webPhrase != nil && len(tr.webPhrase) > 1 {
+		foundTranslation = true
+		cyan.Println(" Web Phares")
+		for key := range tr.webPhrase {
+			cyan.Println("  " + key)
+			value := tr.webPhrase[key]
+			for _, v := range value {
+				white.Println("   - " + v)
+			}
+			// white.Println()
+		}
+	}
+
+	if !foundTranslation {
+		fmt.Println("未找到翻译")
+	}
 }
