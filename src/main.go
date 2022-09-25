@@ -2,10 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"os"
 	"strings"
 	"time"
+
 	"github.com/fatih/color"
 	"github.com/tidwall/gjson"
+	"github.com/PuerkitoBio/goquery"
 )
 
 type Selection struct {
@@ -16,6 +21,9 @@ type Selection struct {
 type TranslatedText struct {
 	srcText string
 	destText string
+	explanationCN []string
+	explanationWeb []string
+	webPhrase map[string][]string
 	priority int64
 	index int64
 }
@@ -29,12 +37,21 @@ type TranslatedText struct {
  * @return 翻译之后的文本
  */
 func translate(sel Selection, srcLang string, destLang string, nextIndex *int64) TranslatedText {
-	tr := TranslatedText{sel.text, sel.text, 0, *nextIndex}
+	tr := TranslatedText{
+		srcText: sel.text,
+		destText: sel.text, 
+		explanationCN: nil,
+		explanationWeb: nil,
+		webPhrase: nil,
+		priority: 0,
+		index: *nextIndex,
+	}
 	*nextIndex += 1
 
 	n := strings.Count(tr.srcText, " ")
 	if n == 0 && len(tr.srcText) < 30 {
-		tr.destText = google_translate_shortword(srcLang, destLang, tr.srcText)
+		// tr.destText = google_translate_shortword(srcLang, destLang, tr.srcText)
+		google_translate_shortword(tr.srcText, &tr)
 	} else {
 		tr.destText = google_translate_longstring(srcLang, destLang, tr.srcText)
 	}
@@ -49,18 +66,25 @@ func translate(sel Selection, srcLang string, destLang string, nextIndex *int64)
  * @param text 待翻译文本
  * @return 翻译后的文本
  */
-func google_translate_shortword(srcLang string, targetLang string, text string) string {
-	u := fmt.Sprintf(
-		"https://translate.googleapis.com/translate_a/single?client=gtx&sl=%s&tl=%s&dj=1&dt=t&dt=bd&dt=qc&dt=rm&dt=ex&dt=at&dt=ss&dt=rw&dt=ld&q=%s&button&tk=233819.233819",
-		srcLang,
-		targetLang,
-		text,
-	)
-	// {"sentences":[{"trans":"这","orig":"The","backend":10},{"translit":"Zhè"}],"src":"en","alternative_translations":[{"src_phrase":"The","alternative":[{"word_postproc":"这","score":1000,"has_preceding_space":true,"attach_to_next_token":false,"backends":[10]},{"word_postproc":"该","score":0,"has_preceding_space":true,"attach_to_next_token":false,"backends":[3],"backend_infos":[{"backend":3}]},{"word_postproc":"那个","score":0,"has_preceding_space":true,"attach_to_next_token":false,"backends":[8]}],"srcunicodeoffsets":[{"begin":0,"end":3}],"raw_src_segment":"The","start_pos":0,"end_pos":0}],"confidence":1.0,"spell":{},"ld_result":{"srclangs":["en"],"srclangs_confidences":[1.0],"extended_srclangs":["en"]}}
-	resp := HttpGet(u)
-	sentences := gjson.Parse(resp).Get("sentences")
-	trans := sentences.Get("0").Get("trans").String()
-	return trans
+func google_translate_shortword(text string, tr *TranslatedText) {
+	req := fmt.Sprintf("http://dict.youdao.com/w/%s", text)
+	// resp := HttpGet(u)
+	resp, err := http.Get(req)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	defer resp.Body.Close()
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tr.srcText = text
+
+	tr.explanationCN = getExplanationCN(*doc)
+	tr.explanationWeb = getExplanationWeb(*doc)
+	tr.webPhrase = getWebPhrase(*doc)
 }
 
 /**
