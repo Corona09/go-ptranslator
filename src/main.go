@@ -144,7 +144,7 @@ func main() {
 	var preSel Selection = Selection{ "", 0 }
 	var q PQ
 
-	const MAX_TEXT_LENGTH int = 255
+	const MAX_TEXT_LENGTH int = 256
 	
 	var srcLang string = "en"
 	var destLang string = "zh-CN"
@@ -159,7 +159,7 @@ func main() {
 		
 		if len(sel.text) > MAX_TEXT_LENGTH {
 			// 文本过长, 输出错误提示
-			fmt.Printf("Its too long\n\n")
+			fmt.Printf("Its too long (%d), maximum is %d\n\n", len(sel.text), MAX_TEXT_LENGTH)
 			ClearSel()
 			continue
 		}
