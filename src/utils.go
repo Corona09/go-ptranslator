@@ -202,6 +202,7 @@ func printYoudaoTrans(tr TranslatedText) {
 	white := color.New(color.FgWhite)
 	green := color.New(color.FgHiGreen).Add(color.Bold)
 	cyan := color.New(color.FgHiCyan).Add(color.Bold).Add(color.Italic)
+	red := color.New(color.FgHiRed).Add(color.Bold).Add(color.Italic)
 
 	// 打印音标
 	prompt.Printf(" [翻译]"); green.Printf(" >>> ");
@@ -270,11 +271,13 @@ func printYoudaoTrans(tr TranslatedText) {
 			for _, v := range value {
 				white.Println("   - " + v)
 			}
-			// white.Println()
 		}
+		white.Println()
 	}
 
 	if !foundTranslation {
-		fmt.Println("未找到翻译")
+		prompt.Printf(" [错误] ")
+		red.Println("Translation not found")
+		red.Println()
 	}
 }
