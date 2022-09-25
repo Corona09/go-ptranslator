@@ -200,10 +200,11 @@ func printYoudaoTrans(tr TranslatedText) {
 	prompt := color.New(color.FgHiYellow).Add(color.Bold)
 	yellow := color.New(color.FgHiYellow).Add(color.Bold)
 	white := color.New(color.FgWhite).Add(color.Bold)
-	greenBold := color.New(color.FgHiGreen).Add(color.Bold)
+	green := color.New(color.FgHiGreen).Add(color.Bold)
+	cyan := color.New(color.FgHiCyan).Add(color.Bold)
 
 	// 打印音标
-	prompt.Printf(" [翻译]"); greenBold.Printf(" >>> ");
+	prompt.Printf(" [翻译]"); green.Printf(" >>> ");
 	white.Printf("%s ", tr.srcText)
 	for _, p := range tr.pronounce {
 		yellow.Printf("%s ", p)
@@ -216,17 +217,25 @@ func printYoudaoTrans(tr TranslatedText) {
 		indient := 0
 		for k, subexp := range exps {
 			r := regexp.MustCompile("[(a-z)*]\\.(.*)")
-			if r.MatchString(subexp) || k == 0 {
-				indient = strings.Index(subexp, ".") + 1
-				white.Println("*" + subexp)
+			if k == 0 {
+				if r.MatchString(subexp) {
+					indient = strings.Index(subexp, ".") + 1
+					x := strings.SplitN(subexp, ".", 2)
+					cyan.Printf(" " + x[0])
+					white.Println(" * " + strings.TrimSpace(x[1]))
+				} else {
+					cyan.Printf("Phares. ")
+					white.Println(" " + subexp)
+				}
 			} else {
-				white.Printf("  ")
+				white.Printf(" ")
 				for i := 0; i < indient; i++ {
 					white.Printf(" ")
 				}
-				white.Println(subexp)
+				white.Println("* " + subexp)
 			}
 		}
+		fmt.Println()
 	}
 	// 打印 web 释义
 	// 打印 web 短语
