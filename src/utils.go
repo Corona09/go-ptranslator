@@ -13,6 +13,7 @@ import (
 	"regexp"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/fatih/color"
 )
 
 // 清除选择
@@ -195,3 +196,38 @@ func getWebPhrase(doc goquery.Document) map[string][]string {
 	return result
 }
 
+func printYoudaoTrans(tr TranslatedText) {
+	prompt := color.New(color.FgHiYellow).Add(color.Bold)
+	yellow := color.New(color.FgHiYellow).Add(color.Bold)
+	white := color.New(color.FgWhite).Add(color.Bold)
+	greenBold := color.New(color.FgHiGreen).Add(color.Bold)
+
+	// 打印音标
+	prompt.Printf(" [翻译]"); greenBold.Printf(" >>> ");
+	white.Printf("%s ", tr.srcText)
+	for _, p := range tr.pronounce {
+		yellow.Printf("%s ", p)
+	}
+	fmt.Println()
+
+	// 打印中文释义
+	for _, exp := range tr.explanationCN {
+		exps := strings.Split(exp, "；")
+		indient := 0
+		for k, subexp := range exps {
+			r := regexp.MustCompile("[(a-z)*]\\.(.*)")
+			if r.MatchString(subexp) || k == 0 {
+				indient = strings.Index(subexp, ".") + 1
+				white.Println("*" + subexp)
+			} else {
+				white.Printf("  ")
+				for i := 0; i < indient; i++ {
+					white.Printf(" ")
+				}
+				white.Println(subexp)
+			}
+		}
+	}
+	// 打印 web 释义
+	// 打印 web 短语
+}

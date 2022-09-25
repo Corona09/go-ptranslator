@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/fatih/color"
 	"github.com/tidwall/gjson"
-	"github.com/PuerkitoBio/goquery"
 )
 
 type Selection struct {
@@ -24,6 +24,7 @@ type TranslatedText struct {
 	explanationCN []string
 	explanationWeb []string
 	webPhrase map[string][]string
+	pronounce []string
 	priority int64
 	index int64
 }
@@ -85,6 +86,7 @@ func google_translate_shortword(text string, tr *TranslatedText) {
 	tr.explanationCN = getExplanationCN(*doc)
 	tr.explanationWeb = getExplanationWeb(*doc)
 	tr.webPhrase = getWebPhrase(*doc)
+	tr.pronounce = getPronounce(*doc)
 }
 
 /**
@@ -106,12 +108,9 @@ func google_translate_longstring(srcLang string, targetLang string, text string)
 	return result
 }
 
-/**
- * 打印翻译后的文本
- */
+// 打印翻译后的文本
+// @param tr 翻译后的文本
 func printText(tr TranslatedText) {
-	// color.Cyan("* * * <%02d> %s * * *", tr.index, time.Now().String()[:19])
-
 	cyan := color.New(color.FgCyan).Add(color.Bold)
 	white := color.New(color.FgWhite).Add(color.Bold)
 	cyan.Printf("* * * "); white.Printf("<%02d> %s", tr.index, time.Now().String()[:19]); cyan.Printf(" * * *\n")
@@ -121,8 +120,12 @@ func printText(tr TranslatedText) {
 
 	prompt := color.New(color.FgHiYellow).Add(color.Bold)
 	prompt.Printf(" [原文]"); greenBold.Printf(" >>> "); bold.Println(tr.srcText + " (" + fmt.Sprint(len(tr.srcText)) + ")")
-	prompt.Printf(" [翻译]"); greenBold.Printf(" >>> "); white.Println(tr.destText)
-	fmt.Println()
+	if strings.Count(tr.srcText, " ") >= 1 {
+		prompt.Printf(" [翻译]"); greenBold.Printf(" >>> "); white.Println(tr.destText)
+		fmt.Println()
+	} else {
+		printYoudaoTrans(tr)
+	}
 }
 
 func welcome() {
