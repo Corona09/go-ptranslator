@@ -165,7 +165,7 @@ func main() {
 		}
 
 		preSel = sel
-		if diff != 0 {
+		if diff != 0 && len(sel.text) > 0 {
 			var translatedText TranslatedText = translate(sel, srcLang, destLang, &tid)
 			push(&q, translatedText)
 			var top TranslatedText = pop(&q)
