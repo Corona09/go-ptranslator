@@ -144,6 +144,8 @@ func main() {
 	var preSel Selection = Selection{ "", 0 }
 	var q PQ
 
+	warning := color.New(color.FgHiRed).Add(color.Italic).Add(color.Bold)
+
 	const MAX_TEXT_LENGTH int = 256
 	
 	var srcLang string = "en"
@@ -156,16 +158,16 @@ func main() {
 	for {
 		var sel Selection = GetSel(&sid)
 		var diff int = Compare(sel, preSel)
-		
-		if len(sel.text) > MAX_TEXT_LENGTH {
-			// 文本过长, 输出错误提示
-			fmt.Printf("Its too long (%d), maximum is %d\n\n", len(sel.text), MAX_TEXT_LENGTH)
-			ClearSel()
-			continue
-		}
 
 		preSel = sel
 		if diff != 0 && len(sel.text) > 0 {
+
+			if len(sel.text) > MAX_TEXT_LENGTH {
+				// 文本过长, 输出错误提示
+				// fmt.Printf("Its too long (%d), maximum is %d\n\n", len(sel.text), MAX_TEXT_LENGTH)
+				warning.Printf("Its too long (%d), maximum is %d\n\n", len(sel.text), MAX_TEXT_LENGTH)
+				continue
+			}
 			var translatedText TranslatedText = translate(sel, srcLang, destLang, &tid)
 			push(&q, translatedText)
 			var top TranslatedText = pop(&q)
